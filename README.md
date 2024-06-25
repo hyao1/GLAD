@@ -1,6 +1,6 @@
 # GLAD: Towards Better Reconstruction with Global and Local Adaptive Diffusion Models for Unsupervised Anomaly Detection.
 The official code of "GLAD: Towards Better Reconstruction with Global and Local Adaptive Diffusion Models for Unsupervised Anomaly Detection".
-Official implementation of [GLAD](https://arxiv.org/abs/2406.07487)
+Paper [GLAD](https://arxiv.org/abs/2406.07487)
 
 
 
