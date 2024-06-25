@@ -1,5 +1,5 @@
 export INSTANCE_DIR='/hdd/Datasets/MVTec-AD'
-export OUTPUT_DIR="4000step_bs32_eps_anomaly"
+export OUTPUT_DIR="4000step_bs32_eps_anomaly2"
 export ANOMALY_DIR="/hdd/Datasets/dtd"
 export CLASS_NAME="all"
 export MAX_TRAIN_STEP=4000

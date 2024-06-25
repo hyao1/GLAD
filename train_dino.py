@@ -297,7 +297,7 @@ if __name__ == "__main__":
         args.checkpoint_step = class_name[args.class_name][0]
         args.lmd = class_name[args.class_name][2]
 
-        args.output_dir = f"model/{args.class_name}_{total_checkpoints}step_bs32_eps_anomaly_0"
+        args.output_dir = f"model/{args.class_name}_{total_checkpoints}step_bs32_eps_anomaly2_0"
         args.lr = 3e-4
         args.inference_step = 15
 
