@@ -20,7 +20,7 @@ To train the UNet of stable diffusion, modify the settings in the train.sh and t
 ```train
 bash train.sh
 ```
-Model checkpoints trained by us are [Baidu Netdisk](https://pan.baidu.com/s/1xH24M4OxAmutRxVPlc011w?pwd=lpk3)
+Model checkpoints trained by us are [OneDrive](https://stuhiteducn-my.sharepoint.com/:f:/g/personal/23b903042_stu_hit_edu_cn/Etg1bdDSnOZBt7AydlkCzMUBYKxgmM_9tB-g5M70PJhAVQ)
 
 To evaluate and test the model, modify the path of models in the main.py and test.sh, and run:
 
