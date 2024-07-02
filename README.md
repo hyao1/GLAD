@@ -13,14 +13,14 @@ pip install -r requirements.txt
 ```
 
 ## Train and Evaluation of the Model
-First, you should download the pretrained stable diffusion model from [pretrained model](https://huggingface.co/CompVis/stable-diffusion-v1-4), and datasets. (In addition, [DTD](https://www.robots.ox.ac.uk/~vgg/data/dtd/) dataset is required for anomaly synthesis) 
+First, you should download the pretrained stable diffusion model from [pretrained model](https://huggingface.co/CompVis/stable-diffusion-v1-4), and datasets. (In addition, [DTD](https://www.robots.ox.ac.uk/~vgg/data/dtd/) dataset is required for anomaly synthesis). If you can not download pretrained stable diffusion model, we provided it in our [OneDrive](https://stuhiteducn-my.sharepoint.com/:f:/g/personal/23b903042_stu_hit_edu_cn/Etg1bdDSnOZBt7AydlkCzMUBYKxgmM_9tB-g5M70PJhAVQ).
 
 To train the UNet of stable diffusion, modify the settings in the train.sh and train the model on different categories:
 
 ```train
 bash train.sh
 ```
-Model checkpoints trained by us are [OneDrive](https://stuhiteducn-my.sharepoint.com/:f:/g/personal/23b903042_stu_hit_edu_cn/Etg1bdDSnOZBt7AydlkCzMUBYKxgmM_9tB-g5M70PJhAVQ)
+Model checkpoints trained by us and pretrained stable diffusion model are here: [OneDrive](https://stuhiteducn-my.sharepoint.com/:f:/g/personal/23b903042_stu_hit_edu_cn/Etg1bdDSnOZBt7AydlkCzMUBYKxgmM_9tB-g5M70PJhAVQ)
 
 To evaluate and test the model, modify the path of models in the main.py and test.sh, and run:
 
