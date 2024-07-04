@@ -20,7 +20,7 @@ To train the UNet of stable diffusion, modify the settings in the train.sh and t
 ```train
 bash train.sh
 ```
-Model checkpoints trained by us and pretrained stable diffusion model are here: [OneDrive](https://stuhiteducn-my.sharepoint.com/:f:/g/personal/23b903042_stu_hit_edu_cn/Etg1bdDSnOZBt7AydlkCzMUBYKxgmM_9tB-g5M70PJhAVQ)
+Models (VAE, Unet, DINO) trained by us are here: [OneDrive](https://stuhiteducn-my.sharepoint.com/:f:/g/personal/23b903042_stu_hit_edu_cn/Etg1bdDSnOZBt7AydlkCzMUBYKxgmM_9tB-g5M70PJhAVQ)
 
 To evaluate and test the model, modify the path of models in the main.py and test.sh, and run:
 
@@ -28,21 +28,36 @@ To evaluate and test the model, modify the path of models in the main.py and tes
 bash test.sh
 ```
 
-In particular, considering the large differences between the visa dataset and the pre-trained model, we fine-tune VAE of stable diffusion and DINO.
+In particular, considering the large differences between the VisA and PCB-Bank dataset and the pre-trained model, we fine-tune VAE of stable diffusion and DINO.
 You can refer to the [DiffAD](https://github.com/Loco-Roco/DiffAD) for fine-tuning VAE. 
 
 To fine-tune DINO, run:
 
 ```fine-tune DINO
-python train-dino.py --dataset VisA
+python train_dino.py --dataset VisA
 ```
-To test DINO, run:
+
+## Code and models about multi-class
+We also test our method at multi-class setting. Pretrained stable diffusion model also is required,  and models (VAE, Unet, DINO) trained by us can be download from [OneDrive](https://stuhiteducn-my.sharepoint.com/:f:/g/personal/23b903042_stu_hit_edu_cn/Etg1bdDSnOZBt7AydlkCzMUBYKxgmM_9tB-g5M70PJhAVQ).
+
+To train the UNet of stable diffusion, modify the settings in the train.sh and train the model on different categories:
+
+```train
+bash train_multi.sh
+```
+
+To evaluate and test the model, modify the path of models in the main.py and test.sh, and run:
+
+```test
+bash test_multi.sh
+```
+In particular, we fine-tune VAE of stable diffusion for VisA and PCB-Bank referring to [DiAD](https://github.com/lewandofskee/DiAD). And We fine-tune DINO for PCB-Bank referring to [DDAD](https://github.com/arimousa/DDAD).
+
+To fine-tune DINO, run:
 
 ```fine-tune DINO
-python test-dino.py --dataset VisA
+python train_dino_multi.py --dataset VisA
 ```
-## Code and models about multi-class
-coming soon
 
 ## Citation
 
