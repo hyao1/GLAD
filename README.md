@@ -51,7 +51,7 @@ To evaluate and test the model, modify the path of models in the main.py and tes
 ```test
 bash test_multi.sh
 ```
-In particular, we fine-tune VAE of stable diffusion for VisA and PCB-Bank referring to [DiAD](https://github.com/lewandofskee/DiAD). And We fine-tune DINO for PCB-Bank referring to [DDAD](https://github.com/arimousa/DDAD).
+In particular, we fine-tune VAE of stable diffusion for VisA and PCB-Bank referring to [DiAD](https://github.com/lewandofskee/DiAD).
 
 To fine-tune DINO, run:
 
