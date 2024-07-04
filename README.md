@@ -2,6 +2,7 @@
 The official code of "GLAD: Towards Better Reconstruction with Global and Local Adaptive Diffusion Models for Unsupervised Anomaly Detection".
 Paper [GLAD](https://arxiv.org/abs/2406.07487)
 
+![image](https://github.com/hyao1/GLAD/assets/52654892/62a8d52d-72ab-4bda-8fb4-41b5d8e0a044)
 
 
 ## Requirements
@@ -12,7 +13,10 @@ To install requirements:
 pip install -r requirements.txt
 ```
 
-## Train and Evaluation of the Model
+## Models trained by us
+Models (VAE, Unet, DINO) trained by us are here: [OneDrive](https://stuhiteducn-my.sharepoint.com/:f:/g/personal/23b903042_stu_hit_edu_cn/Etg1bdDSnOZBt7AydlkCzMUBYKxgmM_9tB-g5M70PJhAVQ).
+
+## Training and Evaluation of the Model
 First, you should download the pretrained stable diffusion model from [pretrained model](https://huggingface.co/CompVis/stable-diffusion-v1-4), and datasets. (In addition, [DTD](https://www.robots.ox.ac.uk/~vgg/data/dtd/) dataset is required for anomaly synthesis). If you can not download pretrained stable diffusion model, we provided it in our [OneDrive](https://stuhiteducn-my.sharepoint.com/:f:/g/personal/23b903042_stu_hit_edu_cn/Etg1bdDSnOZBt7AydlkCzMUBYKxgmM_9tB-g5M70PJhAVQ).
 
 To train the UNet of stable diffusion, modify the settings in the train.sh and train the model on different categories:
@@ -20,7 +24,6 @@ To train the UNet of stable diffusion, modify the settings in the train.sh and t
 ```train
 bash train.sh
 ```
-Models (VAE, Unet, DINO) trained by us are here: [OneDrive](https://stuhiteducn-my.sharepoint.com/:f:/g/personal/23b903042_stu_hit_edu_cn/Etg1bdDSnOZBt7AydlkCzMUBYKxgmM_9tB-g5M70PJhAVQ)
 
 To evaluate and test the model, modify the path of models in the main.py and test.sh, and run:
 
@@ -31,7 +34,7 @@ bash test.sh
 In particular, considering the large differences between the VisA and PCB-Bank dataset and the pre-trained model, we fine-tune VAE of stable diffusion and DINO.
 You can refer to the [DiffAD](https://github.com/Loco-Roco/DiffAD) for fine-tuning VAE. 
 
-To fine-tune DINO, run:
+To fine-tune DINO (referring to [DDAD](https://github.com/arimousa/DDAD)), run:
 
 ```fine-tune DINO
 python train_dino.py --dataset VisA
@@ -53,7 +56,7 @@ bash test_multi.sh
 ```
 In particular, we fine-tune VAE of stable diffusion for VisA and PCB-Bank referring to [DiAD](https://github.com/lewandofskee/DiAD).
 
-To fine-tune DINO, run:
+To fine-tune DINO (referring to [DDAD](https://github.com/arimousa/DDAD)), run:
 
 ```fine-tune DINO
 python train_dino_multi.py --dataset VisA
