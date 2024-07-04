@@ -1,9 +1,8 @@
 # GLAD: Towards Better Reconstruction with Global and Local Adaptive Diffusion Models for Unsupervised Anomaly Detection.
-The official code of "GLAD: Towards Better Reconstruction with Global and Local Adaptive Diffusion Models for Unsupervised Anomaly Detection".
-Paper [GLAD](https://arxiv.org/abs/2406.07487)[ECCV2024]
+The official code of "GLAD: Towards Better Reconstruction with Global and Local Adaptive Diffusion Models for Unsupervised Anomaly Detection". 
+Paper: [GLAD](https://arxiv.org/abs/2406.07487) accepted by ECCV2024.
 
 ![image](https://github.com/hyao1/GLAD/assets/52654892/62a8d52d-72ab-4bda-8fb4-41b5d8e0a044)
-
 
 ## Requirements
 This repository is implemented and tested on Python 3.10 and PyTorch 2.0.1.
@@ -39,6 +38,8 @@ To fine-tune DINO (referring to [DDAD](https://github.com/arimousa/DDAD)), run:
 ```fine-tune DINO
 python train_dino.py --dataset VisA
 ```
+Quantitative results on MVTec-AD, MPDD, VisA and PCB-Bank datasets. Metrics are I-AUROC/I-AP/I-F1-max at first raw (for detection) and P-AUROC/PAP/P-F1-max/PRO at second raw (for localization).
+![image](https://github.com/hyao1/GLAD/assets/52654892/522bf587-8471-4e7e-be3e-c0b080915691)
 
 ## Training and Evaluation of the Model for Multi-class
 We also test our method at multi-class setting. Pretrained stable diffusion model also is required,  and models (VAE, Unet, DINO) trained by us can be download from [OneDrive](https://stuhiteducn-my.sharepoint.com/:f:/g/personal/23b903042_stu_hit_edu_cn/Etg1bdDSnOZBt7AydlkCzMUBYKxgmM_9tB-g5M70PJhAVQ).
@@ -61,6 +62,8 @@ To fine-tune DINO (referring to [DDAD](https://github.com/arimousa/DDAD)), run:
 ```fine-tune DINO
 python train_dino_multi.py --dataset VisA
 ```
+Quantitative results of multi-category setting on MVTec-AD, MPDD, VisA and PCB-Bank datasets. Metrics are I-AUROC/I-AP/I-F1-max at first raw (for detection) and P-AUROC/P-AP/P-F1-max/PRO at second raw (for localization).
+![image](https://github.com/hyao1/GLAD/assets/52654892/b38fe5af-1cb4-4d89-95f3-9ff59f98d96f)
 
 ## Citation
 
