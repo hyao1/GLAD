@@ -1,6 +1,7 @@
 # GLAD: Towards Better Reconstruction with Global and Local Adaptive Diffusion Models for Unsupervised Anomaly Detection.
 The official code of "GLAD: Towards Better Reconstruction with Global and Local Adaptive Diffusion Models for Unsupervised Anomaly Detection". 
 Paper: [GLAD](https://arxiv.org/abs/2406.07487) accepted by ECCV2024.
+[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/anomaly-detection-with-conditioned-denoising/anomaly-detection-on-visa)](https://paperswithcode.com/sota/anomaly-detection-on-visa?p=anomaly-detection-with-conditioned-denoising)
 
 ![image](https://github.com/hyao1/GLAD/assets/52654892/62a8d52d-72ab-4bda-8fb4-41b5d8e0a044)
 
