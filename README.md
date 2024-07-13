@@ -7,6 +7,7 @@
 
 ## News
 * [07/13/2024] Support for mixed_precision training.
+* [07/13/2024] Release the [PCB-Bank](https://github.com/SSRheart/PCB-Bank) dataset we integrated.
   
 ## Requirements
 This repository is implemented and tested on Python 3.10 and PyTorch 2.0.1.
