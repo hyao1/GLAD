@@ -5,6 +5,9 @@
 
 ![image](https://github.com/hyao1/GLAD/assets/52654892/62a8d52d-72ab-4bda-8fb4-41b5d8e0a044)
 
+## News
+* [07/13/2024] Support for mixed_precision training.
+  
 ## Requirements
 This repository is implemented and tested on Python 3.10 and PyTorch 2.0.1.
 To install requirements:
