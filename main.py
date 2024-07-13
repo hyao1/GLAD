@@ -39,11 +39,12 @@ from creat_model import model
 from sklearn.metrics import roc_auc_score, precision_recall_curve, average_precision_score
 
 from utilize.utilize import normalize, fix_seeds, compute_pro, reconstruction
-import warnings
+
 from creat_model import get_vit_encoder
 import torch.nn.functional as F
 from kornia.filters import gaussian_blur2d
 
+import warnings
 warnings.filterwarnings("ignore")
 logger = get_logger(__name__)
 
@@ -56,6 +57,13 @@ def parse_args(input_args=None):
                         default="CompVis/stable-diffusion-v1-4",
                         help="Path to pretrained model or model identifier.", )
     parser.add_argument("--seed", type=int, default=0, help="A seed for reproducible training.")
+    parser.add_argument("--mixed_precision", type=str, default="no", choices=["no", "fp16", "bf16"],
+        help=(
+            "Whether to use mixed precision. Choose"
+            "between fp16 and bf16 (bfloat16). Bf16 requires PyTorch >= 1.10."
+            "and Nvidia Ampere GPU or Intel Gen 4 Xeon (and later) ."
+        ),
+    )
 
     # dataset setting
     parser.add_argument("--instance_data_dir", type=str, default="/hdd/Datasets/MVTec-AD")
@@ -69,6 +77,7 @@ def parse_args(input_args=None):
     parser.add_argument("--resolution", type=int, default=512, )
     parser.add_argument("--dino_resolution", type=int, default=512, )
     parser.add_argument("--v", type=int, default=0, )
+    parser.add_argument("--input_threshold", type=float, default=0.0, )
     parser.add_argument("--dino_save_path", default=None, type=str)
 
     parser.add_argument("--inference_step", type=int, default=25, )
@@ -196,20 +205,16 @@ def train_one_epoch(accelerator,
                     instance_images = batch["anomaly_images"].to(dtype=weight_dtype)
                     supervise_images = batch["instance_images"].to(dtype=weight_dtype)
 
-                    anomaly_input = vae.encode(instance_images).latent_dist.sample(
-                        torch.Generator(args.seed)) * vae.config.scaling_factor
-                    supervise_input = vae.encode(supervise_images).latent_dist.sample(
-                        torch.Generator(args.seed)) * vae.config.scaling_factor
+                    anomaly_input = vae.encode(instance_images).latent_dist.sample(torch.Generator(args.seed)) * vae.config.scaling_factor
+                    supervise_input = vae.encode(supervise_images).latent_dist.sample(torch.Generator(args.seed)) * vae.config.scaling_factor
 
                     if pre_encoder_hidden_states is not None:
                         encoder_hidden_states = pre_encoder_hidden_states.to(accelerator.device)
                         encoder_hidden_states = encoder_hidden_states.repeat(anomaly_input.shape[0], 1, 1)
                     else:
-                        encoder_hidden_states = encode_prompt(text_encoder, batch["instance_prompt_ids"].squeeze(),
-                                                              accelerator.device)
+                        encoder_hidden_states = encode_prompt(text_encoder, batch["instance_prompt_ids"].squeeze(), accelerator.device)
 
-                timesteps = torch.randint(0, noise_scheduler.config.num_train_timesteps, (anomaly_input.shape[0],),
-                                          device=accelerator.device).long()
+                timesteps = torch.randint(0, noise_scheduler.config.num_train_timesteps, (anomaly_input.shape[0],), device=accelerator.device).long()
                 alpha = (timesteps / noise_scheduler.config.num_train_timesteps).reshape(timesteps.shape[0], 1, 1, 1)
                 synthesis_features = alpha * anomaly_input + (1 - alpha) * supervise_input
 
@@ -281,7 +286,7 @@ def test(dino_model, dino_frozen, val_pipe, weight_dtype, val_dataloader, args, 
             object_mask = batch["object_mask"].to(device)
 
             reconstruct_images, step = reconstruction(val_pipe, weight_dtype, args, image_input, dino_frozen)
-            print(image_input[0][0][0].sum(), reconstruct_images[0][0][0].sum())
+
             image_input = torch.nn.functional.interpolate(image_input, size=args.dino_resolution, mode='bilinear', align_corners=True)
             reconstruct_images = torch.nn.functional.interpolate(reconstruct_images, size=args.dino_resolution, mode='bilinear', align_corners=True)
             anomaly_mask = torch.nn.functional.interpolate(anomaly_mask, size=args.dino_resolution, mode='bilinear', align_corners=True)
@@ -375,7 +380,6 @@ def load_vae(vae, class_name):
         keys = list(sd.keys())
         for k in keys:
             if "loss" in k:
-                # print("Deleting key {} from state_dict.".format(k))
                 del sd[k]
         vae.load_state_dict(sd)
         return vae
@@ -384,8 +388,7 @@ def load_vae(vae, class_name):
 
 
 def load_test_model(args, weight_dtype):
-    dino_model = get_vit_encoder(vit_arch="vit_base", vit_model="dino", vit_patch_size=8, enc_type_feats=None).to(
-        device, dtype=weight_dtype)
+    dino_model = get_vit_encoder(vit_arch="vit_base", vit_model="dino", vit_patch_size=8, enc_type_feats=None).to(device, dtype=weight_dtype)
     dino_model.eval()
 
     val_pipe = StableDiffusionPipeline.from_pretrained(
@@ -401,6 +404,7 @@ def main(args, class_name):
     accelerator_project_config = ProjectConfiguration(project_dir=args.output_dir, logging_dir=logging_dir)
 
     accelerator = Accelerator(
+        mixed_precision=args.mixed_precision,
         gradient_accumulation_steps=args.gradient_accumulation_steps,
         project_config=accelerator_project_config,
     )
@@ -422,6 +426,10 @@ def main(args, class_name):
     logger.info(accelerator.state, main_process_only=False)
 
     weight_dtype = torch.float32
+    if accelerator.mixed_precision == "fp16":
+        weight_dtype = torch.float16
+    elif accelerator.mixed_precision == "bf16":
+        weight_dtype = torch.bfloat16
 
     tokenizer = AutoTokenizer.from_pretrained(
         args.pretrained_model_name_or_path,
@@ -434,7 +442,7 @@ def main(args, class_name):
     vae = load_vae(vae, class_name)
 
     text_encoder.to(accelerator.device, dtype=weight_dtype)
-    unet.to(dtype=weight_dtype)
+
     noise_scheduler = DDIMScheduler.from_pretrained(args.pretrained_model_name_or_path, subfolder="scheduler")
     vae.eval()
     text_encoder.eval()

@@ -57,6 +57,12 @@ def parse_args(input_args=None):
                         default="CompVis/stable-diffusion-v1-4",
                         help="Path to pretrained model or model identifier.", )
     parser.add_argument("--seed", type=int, default=0, help="A seed for reproducible training.")
+    parser.add_argument("--mixed_precision", type=str, default="no", choices=["no", "fp16", "bf16"],
+                        help=(
+                            "Whether to use mixed precision. Choose"
+                            "between fp16 and bf16 (bfloat16). Bf16 requires PyTorch >= 1.10."
+                            "and Nvidia Ampere GPU or Intel Gen 4 Xeon (and later) ."),
+                        )
 
     # dataset setting
     parser.add_argument("--instance_data_dir", type=str, default="/hdd/Datasets/MVTec-AD")
@@ -394,6 +400,7 @@ def main(args, class_name):
     accelerator_project_config = ProjectConfiguration(project_dir=args.output_dir, logging_dir=logging_dir)
 
     accelerator = Accelerator(
+        mixed_precision=args.mixed_precision,
         gradient_accumulation_steps=args.gradient_accumulation_steps,
         project_config=accelerator_project_config,
     )
@@ -415,6 +422,10 @@ def main(args, class_name):
     logger.info(accelerator.state, main_process_only=False)
 
     weight_dtype = torch.float32
+    if accelerator.mixed_precision == "fp16":
+        weight_dtype = torch.float16
+    elif accelerator.mixed_precision == "bf16":
+        weight_dtype = torch.bfloat16
 
     tokenizer = AutoTokenizer.from_pretrained(
         args.pretrained_model_name_or_path,
@@ -427,7 +438,7 @@ def main(args, class_name):
     vae = load_vae(vae)
 
     text_encoder.to(accelerator.device, dtype=weight_dtype)
-    unet.to(dtype=weight_dtype)
+
     noise_scheduler = DDIMScheduler.from_pretrained(args.pretrained_model_name_or_path, subfolder="scheduler")
     vae.eval()
     text_encoder.eval()
