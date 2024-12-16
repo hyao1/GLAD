@@ -70,7 +70,7 @@ python train_dino_multi.py --dataset VisA
 Quantitative results of multi-category setting on MVTec-AD, MPDD, VisA and PCB-Bank datasets. Metrics are I-AUROC/I-AP/I-F1-max at first raw (for detection) and P-AUROC/P-AP/P-F1-max/PRO at second raw (for localization).
 ![image](https://github.com/hyao1/GLAD/assets/52654892/b38fe5af-1cb4-4d89-95f3-9ff59f98d96f)
 
-## Training and Evaluation of the Model for Multi-class
+## PCB-Bank dataset
 
 The PCB-Bank dataset of the printing circuit board we integrated can be downloaded from here: [PCB-Bank](https://github.com/SSRheart/PCB-Bank)
 
