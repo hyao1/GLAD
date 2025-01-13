@@ -38,12 +38,12 @@ from dataset.dataset import MVTecDataset
 from creat_model import model
 from sklearn.metrics import roc_auc_score, precision_recall_curve, average_precision_score
 
-from utilize.utilize import normalize, fix_seeds, compute_pro, reconstruction
+from utilize.utilize import normalize, fix_seeds, compute_pro, reconstruction, apply_ad_scoremap
 
 from creat_model import get_vit_encoder
 import torch.nn.functional as F
 from kornia.filters import gaussian_blur2d
-
+import cv2
 import warnings
 warnings.filterwarnings("ignore")
 logger = get_logger(__name__)
