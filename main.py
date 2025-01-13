@@ -361,6 +361,140 @@ def test(dino_model, dino_frozen, val_pipe, weight_dtype, val_dataloader, args, 
 
         return round(auroc_image, 4)*100, round(AP_image, 4)*100, round(best_f1_scores_image, 4)*100, round(auroc_pixel, 4)*100, round(AP_pixel, 4)*100, round(best_f1_scores_pixel, 4)*100, round(pro, 4)*100
 
+def visual(dino_model, dino_frozen, val_pipe, weight_dtype, val_dataloader, args, device, class_name, checkpoint_step):
+    print(f"test:{class_name}, checkpoint_step:{checkpoint_step}")
+    with torch.no_grad():
+
+        val_pipe.unet.load_state_dict(torch.load(args.output_dir + f"/checkpoint-{checkpoint_step}/pytorch_model.bin"))
+
+        val_pipe.unet.to(dtype=weight_dtype)
+        val_pipe.to(device)
+        val_pipe.set_progress_bar_config(disable=True)
+        val_pipe.unet.eval()
+        val_pipe.vae.eval()
+        val_pipe.text_encoder.eval()
+
+        transform = transforms.Compose([
+            transforms.Lambda(lambda t: (t + 1) / (2)),
+            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        ])
+
+        path = f"{args.inference_step}NFE_{args.denoise_step}step_lcm/{args.output_dir.split('/')[-1]}_{args.input_threshold}"
+        if os.path.exists(path) is not True:
+            os.makedirs(path)
+
+        preds = []
+        masks = []
+        scores = []
+        labels = []
+        rec_images = []
+        sources = []
+        steps = []
+
+        for batch in val_dataloader:
+            image_input = batch["instance_images"].to(device)
+            anomaly_mask = batch["instance_masks"].to(device)
+            object_mask = batch["object_mask"].to(device)
+
+            reconstruct_images, step = reconstruction(val_pipe, weight_dtype, args, image_input, dino_frozen)
+
+            image_input = torch.nn.functional.interpolate(image_input, size=args.dino_resolution, mode='bilinear', align_corners=True)
+            reconstruct_images = torch.nn.functional.interpolate(reconstruct_images, size=args.dino_resolution, mode='bilinear', align_corners=True)
+            anomaly_mask = torch.nn.functional.interpolate(anomaly_mask, size=args.dino_resolution, mode='bilinear', align_corners=True)
+            object_mask = torch.nn.functional.interpolate(object_mask.unsqueeze(1), size=args.dino_resolution, mode='bilinear', align_corners=True).squeeze(1)
+
+            image_input = transform(image_input)
+            reconstruct_images = transform(reconstruct_images)
+
+            _, patch_tokens_i = dino_model(image_input.to(dtype=weight_dtype))
+            _, patch_tokens_r = dino_model(reconstruct_images.to(dtype=weight_dtype))
+
+            sigma = 6
+            kernel_size = 2 * int(4 * sigma + 0.5) + 1
+            b, n, c = patch_tokens_i[0][:, 1:, :].shape
+            h = int(n ** 0.5)
+            anomaly_maps1 = torch.zeros((b, 1, args.dino_resolution, args.dino_resolution)).to(device)
+            anomaly_maps2 = torch.zeros((b, 1, args.dino_resolution, args.dino_resolution)).to(device)
+            for idx in range(len(patch_tokens_i)):
+                pi = patch_tokens_i[idx][:, 1:, :]
+                pr = patch_tokens_r[idx][:, 1:, :]
+
+                pi = pi / torch.norm(pi, p=2, dim=-1, keepdim=True)
+                pr = pr / torch.norm(pr, p=2, dim=-1, keepdim=True)
+
+                cos0 = torch.bmm(pi, pr.permute(0, 2, 1))
+
+                anomaly_map1, _ = torch.min(1 - cos0, dim=-1)
+                anomaly_map1 = F.interpolate(anomaly_map1.reshape(-1, 1, h, h), size=args.dino_resolution, mode='bilinear', align_corners=True)
+                anomaly_maps1 += anomaly_map1
+
+                if class_name in ["transistor", "pcb1", "pcb4"]:
+                    anomaly_map2, _ = torch.min(1 - cos0, dim=-2)
+                    anomaly_map2 = F.interpolate(anomaly_map2.reshape(-1, 1, h, h), size=args.dino_resolution, mode='bilinear', align_corners=True)
+                    anomaly_maps2 += anomaly_map2
+
+            if class_name in ["transistor", "pcb1", "pcb4"]:
+                anomaly_maps1 = anomaly_maps1 + anomaly_maps2
+
+            distance_map = torch.mean(torch.abs(image_input - reconstruct_images), dim=1, keepdim=True)
+            anomaly_maps1 = anomaly_maps1 + args.v * torch.max(anomaly_maps1) / torch.max(distance_map) * distance_map
+
+            anomaly_maps1 = gaussian_blur2d(anomaly_maps1, kernel_size=(kernel_size, kernel_size),
+                                            sigma=(sigma, sigma))[:, 0]
+            anomaly_maps = anomaly_maps1 * object_mask.to(device)
+            score = torch.topk(torch.flatten(anomaly_maps, start_dim=1), 250)[0].mean(dim=1)
+
+            masks.extend([m for m in anomaly_mask[:, 0, :, :].cpu().numpy()])
+            preds.extend([a for a in anomaly_maps.cpu().numpy()])
+            scores.extend([s for s in score.cpu().numpy()])
+            labels.extend([l for l in batch["instance_label"].cpu().numpy()])
+            steps.extend([t.cpu().numpy() for t in step])
+
+            for i in range(len(image_input)):
+                source = image_input[i].cpu().permute(1, 2, 0).numpy() * (0.229, 0.224, 0.225) + (
+                    0.485, 0.456, 0.406)
+                reconstruct_image = reconstruct_images[i].cpu().permute(1, 2, 0).numpy() * (
+                    0.229, 0.224, 0.225) + (0.485, 0.456, 0.406)
+                rec_images.append(reconstruct_image)
+                sources.append(source)
+
+        scores = normalize(np.array(scores))
+        labels = np.array(labels)
+        preds = np.array(preds)
+        masks = np.array(masks, dteype=np.int_)
+
+        precisions_image, recalls_image, _ = precision_recall_curve(labels, scores)
+        f1_scores_image = (2 * precisions_image * recalls_image) / (precisions_image + recalls_image)
+        best_f1_scores_image = np.max(f1_scores_image[np.isfinite(f1_scores_image)])
+        auroc_image = roc_auc_score(labels, scores)
+        AP_image = average_precision_score(labels, scores)
+
+        precisions_pixel, recalls_pixel, _ = precision_recall_curve(masks.ravel(), preds.ravel())
+        f1_scores_pixel = (2 * precisions_pixel * recalls_pixel) / (precisions_pixel + recalls_pixel)
+        best_f1_scores_pixel = np.max(f1_scores_pixel[np.isfinite(f1_scores_pixel)])
+        auroc_pixel = roc_auc_score(masks.ravel(), preds.ravel())
+        AP_pixel = average_precision_score(masks.ravel(), preds.ravel())
+
+        pro = compute_pro(masks, preds)
+
+        print(
+            f"test-------- I-AUROC/I-AP/I-F1-max/P-AUROC/P-AP/P-F1-max/PRO:{round(auroc_image, 4)}/{round(AP_image, 4)}/{round(best_f1_scores_image, 4)}/"
+            f"{round(auroc_pixel, 4)}/{round(AP_pixel, 4)}/{round(best_f1_scores_pixel, 4)}/{round(pro, 4)}-----"
+        )
+
+        heat = (preds - np.min(preds)) / (np.max(preds) - np.min(preds))
+
+        rec_images = np.clip(rec_images, 0.0, 1.0)
+        for i, batch in enumerate(val_dataloader.dataset):
+            heat1 = utilize.apply_ad_scoremap(sources[i] * 255, heat[i])
+            mask = masks[i][:, :, None].repeat(3, axis=2) * 255
+            img = np.hstack([sources[i][:, :, ::-1] * 255, rec_images[i][:, :, ::-1] * 255, heat1[:, :, ::-1], mask])
+            name = batch["instance_path"].split("/")
+            name = f"{path}/{format(scores[i], '.4f')}_{steps[i]}_{name[-2]}_{name[-1]}"
+            cv2.imwrite(name, img.astype(np.uint8))
+
+        return round(auroc_image, 4) * 100, round(AP_image, 4) * 100, round(best_f1_scores_image, 4) * 100, \
+            round(auroc_pixel, 4) * 100, round(AP_pixel, 4) * 100, round(best_f1_scores_pixel, 4) * 100, round(pro, 4) * 100
 
 def load_vae(vae, class_name):
     if class_name in ["pcb1", "pcb2", "pcb3", "pcb4", "pcb5", "pcb6", "pcb7"]:
