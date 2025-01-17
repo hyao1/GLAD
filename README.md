@@ -67,7 +67,7 @@ To fine-tune DINO (referring to [DDAD](https://github.com/arimousa/DDAD)), run:
 ```fine-tune DINO
 python train_dino_multi.py --dataset VisA
 ```
-Quantitative results of multi-category setting on MVTec-AD, MPDD, VisA and PCB-Bank datasets. Metrics are I-AUROC/I-AP/I-F1-max at first raw (for detection) and P-AUROC/P-AP/P-F1-max/PRO at second raw (for localization).
+Quantitative results of multi-category setting on MVTec-AD, MPDD, VisA and PCB-Bank datasets. Metrics are I-AUROC/I-AP/I-F1-max at first row (for detection) and P-AUROC/P-AP/P-F1-max/PRO at second row (for localization).
 ![image](https://github.com/hyao1/GLAD/assets/52654892/b38fe5af-1cb4-4d89-95f3-9ff59f98d96f)
 
 ## PCB-Bank dataset
