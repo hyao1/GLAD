@@ -143,13 +143,8 @@ class MVTecDataset(Dataset):
             instance_image_resize = transforms_resize(instance_image)
             anomaly_image, anomaly_mask, anomaly_label, beta = self.generate_anomaly(np.array(instance_image_resize))
             example["anomaly_images"], example["anomaly_masks"] = self.transformer_compose(anomaly_image, anomaly_mask)
-            # example["anomaly_masks"] = example["anomaly_masks"] * beta
             example["instance_label"] = anomaly_label
             example["instance_prompt"] = self.instance_prompt
-
-
-            # example["anomaly_images"], example["anomaly_masks"] = example["instance_images"], example["instance_masks"]
-            # example["instance_label"] = np.array([0.0], dtype=np.float32)
         else:
             transforms_resize = transforms.Resize((self.resize, self.resize),
                                                   interpolation=transforms.InterpolationMode.BILINEAR)
@@ -175,14 +170,6 @@ class MVTecDataset(Dataset):
             object_mask = ndimage.gaussian_filter(object_mask, sigma=sigma)
             example["object_mask"] = object_mask
 
-            # if self.class_name != "cashew":   
-            #     object_mask = ndimage.gaussian_filter(foreground_mask, sigma=sigma)
-            #     object_mask = np.where(object_mask > 0, 1.0, 0.0)
-            # else:
-            #     object_mask = foreground_mask
-            # object_mask = ndimage.gaussian_filter(object_mask, sigma=sigma)
-            # example["object_mask"] = object_mask
-
         return example
 
     def generate_anomaly(self, image):
@@ -198,7 +185,7 @@ class MVTecDataset(Dataset):
 
         perlin_scale = 6
         min_perlin_scale = 0
-        threshold = 0.3 # 之前是0.3
+        threshold = 0.3
         perlin_scalex = 2 ** (torch.randint(min_perlin_scale, perlin_scale, (1,)).numpy()[0])
         perlin_scaley = 2 ** (torch.randint(min_perlin_scale, perlin_scale, (1,)).numpy()[0])
         perlin_noise = rand_perlin_2d_np((image.shape[0], image.shape[1]), (perlin_scalex, perlin_scaley))
@@ -221,19 +208,9 @@ class MVTecDataset(Dataset):
         foreground_mask = self.generate_target_foreground_mask(image, mode=mode).astype(np.float32)
         perlin_thr = np.expand_dims(foreground_mask, axis=2) * perlin_thr
 
-        # cv2.imshow("perlin_thr", perlin_thr)
-        # cv2.imshow("foreground_mask", foreground_mask)
-        # cv2.waitKey()
-
         anomaly_source_thr = anomaly_source_image * perlin_thr
         beta = torch.rand(1).numpy()[0] * 0.8
         augmented_image = image * (1 - perlin_thr) + (1 - beta) * anomaly_source_thr + beta * image * perlin_thr
-
-        # cv2.imwrite("anomaly_source_image.png", anomaly_source_image[:, :, ::-1])
-        # cv2.imwrite("perlin_thr.png", perlin_thr[:, :, ::-1] * 255)
-        # cv2.imwrite("augmented_image.png",augmented_image[:, :, ::-1])
-        # print(111111111111111111111111111111111111111)
-        # exit()
 
         anomaly = torch.rand(1).numpy()[0]
         if anomaly > 0.5:
@@ -274,7 +251,7 @@ class MVTecDataset(Dataset):
             texture_source_img = cv2.imread(anomaly_path_list[idx])
             texture_source_img = cv2.cvtColor(texture_source_img, cv2.COLOR_BGR2RGB)
             anomaly_source_img = cv2.resize(texture_source_img, (self.resize, self.resize)).astype(np.float32)
-            anomaly_source_img = aug(image=img) ### 增强异常源图像
+            anomaly_source_img = aug(image=anomaly_source_img)
         else:
             structure_source_img = aug(image=img)
 
@@ -302,32 +279,18 @@ class MVTecDataset(Dataset):
 
     def transformer_compose(self, image, mask):
         transforms_resize = transforms.Resize((self.resize, self.resize), interpolation=transforms.InterpolationMode.BILINEAR)
-        # transforms_center_crop = transforms.CenterCrop(self.img_size)
-        # transforms_random_horizontal_flip = T.RandomHFlip()
-        # transforms_random_vertical_flip = T.RandomVFlip()
-        # transforms_random_rotate1 = T.RandomRotation([0, 90, 180, 270])
-        # transforms_random_rotate2 = transforms.RandomRotation(15.0)
         transforms_to_tensor = transforms.ToTensor()
-        # mean = (0.48145466, 0.4578275, 0.40821073)
-        # std = (0.26862954, 0.26130258, 0.27577711)
         mean = (0.5, 0.5, 0.5)
         std = (0.5, 0.5, 0.5)
         transforms_normalize = transforms.Normalize(mean, std)
 
         image = transforms_resize(image)
-        # if self.type == "train":
-        #     image, mask = transforms_random_horizontal_flip(image, mask)
-        #     image, mask = transforms_random_vertical_flip(image, mask)
-        #     image, mask = transforms_random_rotate(image, mask)
         image = transforms_to_tensor(image)
         image = transforms_normalize(image)
 
         if mask:
             mask = transforms_resize(mask)
             mask = transforms_to_tensor(mask)
-        # mask = torch.where(mask > 0, 1.0, 0.0)
-        # image_r = transforms_resize(image_r),
-        # image_r = transforms_to_tensor(image_r)
         return image, mask
 
     def get_data_single_class(self, instance_data_root):
@@ -337,10 +300,8 @@ class MVTecDataset(Dataset):
         mask_fold = '' if self.type == 'train' else 'ground_truth'
 
         foldnames = os.listdir(os.path.join(instance_data_root, self.class_name, self.type))
-        # foldnames.sort()
         for image_fold in foldnames:
             filenames = os.listdir(os.path.join(instance_data_root, self.class_name, self.type, image_fold))
-            # filenames.sort(key=lambda x: int(x[:-4]))
             for img in filenames:
                 image_list.append(os.path.join(instance_data_root, self.class_name, self.type, image_fold, img))
                 if image_fold == 'good':
