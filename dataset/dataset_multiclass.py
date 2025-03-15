@@ -52,16 +52,18 @@ class MVTecDataset(Dataset):
             center_crop=False,
             train=True,
             class_name="",
-            encoder_hidden_states=None
+            encoder_hidden_states=None,
+            anomaly_path="/hdd/Datasets/dtd"
     ):
 
         self.tokenizer = tokenizer
         self.encoder_hidden_states = encoder_hidden_states
-
+        
         self.resize = resize
         self.img_size = img_size
         self.center_crop = center_crop
         self.instance_data_root = instance_data_root
+        self.anomaly_path = anomaly_path
         self.type = 'train' if train else 'test'
 
         if class_name is not None and class_name != '':
@@ -103,11 +105,6 @@ class MVTecDataset(Dataset):
             self.class_name = self.class_name_list[index]
             self.instance_prompt = self.instance_prompt_start + self.class_name
 
-        # print(index)
-        # print(self.instance_images_paths[index])
-        # print(self.class_name, self.instance_prompt)
-
-        # instance_images_path = "/hdd/Datasets/VisA/pcb1/test/bad/082.JPG"
         instance_image = Image.open(instance_images_path)
         instance_image = exif_transpose(instance_image)
         if not instance_image.mode == "RGB":
@@ -195,7 +192,8 @@ class MVTecDataset(Dataset):
                               self.augmenters[aug_ind[2]]]
                              )
 
-        anomaly_source_paths = sorted(glob.glob("/hdd/Datasets/dtd/images" + "/*/*.jpg"))
+        # anomaly_source_paths = sorted(glob.glob("/hdd/Datasets/dtd/images" + "/*/*.jpg"))
+        anomaly_source_paths = sorted(glob.glob(f"{self.anomaly_path}/images" + "/*/*.jpg"))
         anomaly_source_image = self.anomaly_source(image, anomaly_source_paths, aug)
 
         perlin_scale = 6
