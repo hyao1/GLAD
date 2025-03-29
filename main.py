@@ -185,7 +185,7 @@ def predict_eps(
     while len(sqrt_one_minus_alpha_prod.shape) < len(x_0_anomaly.shape):
         sqrt_one_minus_alpha_prod = sqrt_one_minus_alpha_prod.unsqueeze(-1)
 
-    eps = (sqrt_alpha_prod * x_0_normal + sqrt_one_minus_alpha_prod * noise - sqrt_alpha_prod * x_0_anomaly) / sqrt_one_minus_alpha_prod
+    eps = (sqrt_alpha_prod * x_0_anomaly + sqrt_one_minus_alpha_prod * noise - sqrt_alpha_prod * x_0_normal) / sqrt_one_minus_alpha_prod
     return eps.to(torch.float32)
 
 
