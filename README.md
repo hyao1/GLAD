@@ -22,6 +22,7 @@ Models (VAE, Unet, DINO) trained by us are here: [OneDrive](https://stuhiteducn-
 
 
 ## Dataset directory should be as follows.
+```shell
 Name_of_Dataset
 |-- Category
 |-----|----- ground_truth
@@ -31,6 +32,8 @@ Name_of_Dataset
 |-----|--------|------ ...
 |-----|----- train
 |-----|--------|------ good
+```
+
 
 
 ## Training and Evaluation of the Model for Single-class
